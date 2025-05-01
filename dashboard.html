@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Копилка на Вещи — Dashboard</title>
+  <!-- Подключаем шрифт Montserrat -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Подключаем canvas-confetti для эффекта празднования -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    /* Основной преливающийся фон и базовые стили */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* Преливающийся фон задаётся здесь: */
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(270deg, #ff5858, #f09819, #22c1c3, #fc466b);
+      background-size: 800% 800%;
+      animation: gradientAnimation 20s ease infinite, fadeInPage 0.8s ease-out forwards;
+      color: #e0e0e0;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes fadeInPage {
+      to { opacity: 1; }
+    }
+    a { color: inherit; text-decoration: none; }
+    
+    /* Анимационные ключевые кадры для элементов */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    /* Header */
+    header {
+      background: rgba(31,31,31,0.9);
+      padding: 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeInDown 0.8s ease-out forwards;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: #fff;
+    }
+    header button {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    header button:hover {
+      background: #1565c0;
+    }
+    
+    /* Верхняя панель с фильтрами и аналитикой */
+    .top-bar {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      animation: fadeInUp 0.8s ease-out forwards;
+      animation-delay: 0.3s;
+    }
+    .filters {
+      display: flex;
+      gap: 20px;
+    }
+    .filters select {
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+      background: #1f1f1f;
+      color: #e0e0e0;
+    }
+    .analytics {
+      font-size: 1.1rem;
+    }
+    
+    /* Основной контейнер для карточек */
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 20px;
+      animation: fadeInUp 0.8s ease-out forwards;
+      animation-delay: 0.3s;
+    }
+    
+    /* Карточки товара */
+    .item-card {
+      background: #252525;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      transition: transform 0.3s;
+    }
+    .item-card:hover {
+      transform: scale(1.02);
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .item-header h3 {
+      font-size: 1.3rem;
+      color: #fff;
+    }
+    .delete-btn {
+      background: #e74c3c;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+    .item-info p {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+    /* Изображения товара */
+    .product-image {
+      max-width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .product-image:hover {
+      transform: scale(1.05);
+    }
+    /* Прогресс-бар с движущимися полосами (эффект Windows-загрузки) */
+    .progress-bar {
+      background: #444;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 20px;
+      margin-bottom: 15px;
+    }
+    .progress {
+      height: 100%;
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+      background-color: #27ae60;
+      background-image: repeating-linear-gradient(
+          135deg,
+          rgba(255,255,255,0.3) 0,
+          rgba(255,255,255,0.3) 15px,
+          transparent 15px,
+          transparent 30px
+      );
+      background-size: 40px 40px;
+      animation: progressStripe 1s linear infinite;
+    }
+    @keyframes progressStripe {
+      from { background-position: 0 0; }
+      to { background-position: 40px 40px; }
+    }
+    
+    /* Кнопки операций */
+    .item-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .item-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .deposit-btn { background: #16a085; }
+    .deposit-btn:hover { background: #138d75; transform: translateY(-2px); }
+    .withdraw-btn { background: #f39c12; }
+    .withdraw-btn:hover { background: #e67e22; transform: translateY(-2px); }
+    
+    /* Общий стиль модальных окон */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .hidden {
+      display: none;
+    }
+    .modal-content {
+      background: #212121;
+      padding: 20px;
+      border-radius: 10px;
+      width: 320px;
+      max-width: 95%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      text-align: center;
+      animation: popIn 0.8s ease-out forwards;
+      position: relative;
+    }
+    .modal .close-button {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    
+    /* Модальное окно: Клавиатура для операций */
+    #keypadModal .display {
+      font-size: 2rem;
+      padding: 10px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #1f1f1f;
+      color: #fff;
+      margin-bottom: 15px;
+      min-height: 50px;
+    }
+    #keypadModal .keys {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    #keypadModal .keys button {
+      padding: 15px;
+      font-size: 1.3rem;
+      border: none;
+      border-radius: 6px;
+      background: #323232;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #keypadModal .keys button:hover {
+      background: #3b3b3b;
+    }
+    #keypadModal .actions {
+      display: flex;
+      gap: 10px;
+    }
+    #keypadModal .action-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      color: #fff;
+      text-transform: uppercase;
+    }
+    #cancelKeypad { background: #e74c3c; }
+    #cancelKeypad:hover { background: #c0392b; transform: translateY(-2px); }
+    #confirmKeypad { background: #16a085; }
+    #confirmKeypad:hover { background: #138d75; transform: translateY(-2px); }
+    
+    /* Модальное окно: Добавление нового товара */
+    #addProductModal .modal-content {
+      width: 360px;
+    }
+    #addProductModal form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    #addProductModal input[type="text"],
+    #addProductModal input[type="number"],
+    #addProductModal input[type="file"] {
+      padding: 10px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #1f1f1f;
+      color: #fff;
+    }
+    #addProductModal button[type="submit"] {
+      padding: 12px;
+      background: #1a73e8;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #addProductModal button[type="submit"]:hover {
+      background: #1565c0;
+    }
+    
+    /* Модальное окно: Поздравление с достижением цели */
+    #goalModal .modal-content {
+      width: 500px;
+      max-width: 95%;
+      text-align: left;
+      padding: 30px;
+      display: flex;
+      gap: 20px;
+    }
+    #goalModal .goal-image-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #goalModal .goal-image-container img {
+      max-width: 100%;
+      border-radius: 6px;
+    }
+    #goalModal .goal-text {
+      flex: 2;
+    }
+    #goalModal .goal-text h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #27ae60;
+    }
+    #goalModal .goal-text p {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+    /* Кнопка "Поделиться" в поздравительном окне */
+    #goalModal .share-btn {
+      background: #1a73e8;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+    #goalModal .share-btn:hover {
+      background: #1565c0;
+    }
+    
+    /* Модальное окно: Lightbox для просмотра изображений товара */
+    #lightboxModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 150;
+    }
+    #lightboxModal.hidden {
+      display: none;
+    }
+    #lightboxModal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    }
+    #lightboxModal .close-lightbox {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 2rem;
+      color: #fff;
+      cursor: pointer;
+    }
+    
+    /* Footer */
+    footer {
+      background: #1f1f1f;
+      color: #aaa;
+      text-align: center;
+      padding: 15px;
+      margin-top: 30px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header с кнопкой для открытия формы добавления нового товара -->
+  <header>
+    <h1>Копилка на Вещи — Dashboard</h1>
+    <button id="openAddProductBtn">Добавить товар</button>
+  </header>
+  
+  <!-- Верхняя панель с фильтрами и аналитикой -->
+  <div class="top-bar">
+    <div class="filters">
+      <select id="filterSelect">
+        <option value="all">Все товары</option>
+        <option value="goal">Достигнуты цели</option>
+        <option value="active">Активные копилки</option>
+      </select>
+      <select id="sortSelect">
+        <option value="date">По дате (новее сначала)</option>
+        <option value="alphabet">По алфавиту</option>
+        <option value="progress">По прогрессу</option>
+      </select>
+    </div>
+    <div class="analytics" id="analytics">
+      Всего накоплено: 0 из 0
+    </div>
+  </div>
+  
+  <!-- Контейнер для карточек товаров -->
+  <div class="container">
+    <section id="itemsContainer">
+      <!-- Карточки будут добавляться динамически -->
+    </section>
+  </div>
+  
+  <!-- Модальное окно: Клавиатура для операций внесения/вывода -->
+  <div id="keypadModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="display" id="keypadDisplay">0</div>
+      <div class="keys">
+        <button class="key">7</button>
+        <button class="key">8</button>
+        <button class="key">9</button>
+        <button class="key">4</button>
+        <button class="key">5</button>
+        <button class="key">6</button>
+        <button class="key">1</button>
+        <button class="key">2</button>
+        <button class="key">3</button>
+        <button class="key">0</button>
+        <button class="key" id="clearKey">C</button>
+        <button class="key" id="backKey">⌫</button>
+      </div>
+      <div class="actions">
+        <button id="cancelKeypad" class="action-btn">Отмена</button>
+        <button id="confirmKeypad" class="action-btn">OK</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно: Добавление нового товара -->
+  <div id="addProductModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-button" id="closeAddProduct">&times;</span>
+      <h2>Добавить товар</h2>
+      <form id="addProductForm">
+        <input type="text" id="newProductName" placeholder="Название товара" required>
+        <input type="number" id="newProductTarget" placeholder="Целевая сумма" min="1" required>
+        <input type="file" id="newProductImage" accept="image/*">
+        <button type="submit">Добавить</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Модальное окно: Поздравление с достижением цели -->
+  <div id="goalModal" class="modal hidden">
+    <div class="modal-content goal-content">
+      <span class="close-button" id="closeGoalModal">&times;</span>
+      <div class="goal-image-container">
+        <img src="" alt="Изображение товара" id="goalProductImage">
+      </div>
+      <div class="goal-text">
+        <h2>Поздравляем!</h2>
+        <p>Вы достигли цели по накоплениям для товара:</p>
+        <p><strong id="goalProductName"></strong></p>
+        <p>Время добавить новый товар или продолжить планирование!</p>
+        <button class="share-btn" id="shareGoal">Поделиться</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно: Lightbox для просмотра изображений -->
+  <div id="lightboxModal" class="modal hidden">
+    <span class="close-lightbox" id="closeLightbox">&times;</span>
+    <img src="" alt="Просмотр изображения" id="lightboxImage">
+  </div>
+  
+  <footer>
+    © 2025 Копилка на Вещи. Все права защищены.
+  </footer>
+  
+  <script>
+    let items = [];
+    let activeItemIndex = null;
+    let activeOperation = null;  // "deposit" или "withdraw"
+    let activeButton = null;       // Кнопка, вызвавшая модальное окно
+    let keypadValue = "0";
+    
+    // Загружаем данные из localStorage (добавляем timestamp, если его нет)
+    function loadItems() {
+      const saved = localStorage.getItem("items");
+      if (saved) {
+        items = JSON.parse(saved);
+        // Если товар не имеет timestamp – добавляем его
+        items.forEach(item => {
+          if (!item.timestamp) {
+            item.timestamp = Date.now();
+          }
+        });
+      }
+      renderItems();
+    }
+    
+    // Сохраняем данные в localStorage
+    function saveItems() {
+      localStorage.setItem("items", JSON.stringify(items));
+    }
+    
+    // Обновляем аналитику (общий баланс накоплений)
+    function updateAnalytics() {
+      const totalSaved = items.reduce((sum, item) => sum + item.saved, 0);
+      const totalTarget = items.reduce((sum, item) => sum + item.target, 0);
+      document.getElementById("analytics").innerText = `Всего накоплено: ${totalSaved} из ${totalTarget}`;
+    }
+    
+    // Функция отрисовки карточек товаров с учётом фильтров и сортировки
+    function renderItems() {
+      const container = document.getElementById("itemsContainer");
+      container.innerHTML = "";
+      
+      // Получаем выбранные значения фильтра и сортировки
+      const filterValue = document.getElementById("filterSelect").value;
+      const sortValue = document.getElementById("sortSelect").value;
+      
+      // Фильтрация: "all" - все, "goal" - товары, где saved>=target, "active" - остальные
+      let filtered = items.filter(item => {
+        if (filterValue === "goal") return item.saved >= item.target;
+        if (filterValue === "active") return item.saved < item.target;
+        return true;
+      });
+      
+      // Сортировка:
+      if (sortValue === "alphabet") {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortValue === "date") {
+        filtered.sort((a, b) => b.timestamp - a.timestamp);
+      } else if (sortValue === "progress") {
+        filtered.sort((a, b) => (b.saved / b.target) - (a.saved / a.target));
+      }
+      
+      // Отрисовка карточек с анимацией задержки для плавного появления
+      filtered.forEach((item, index) => {
+        const progressPercent = Math.min(100, Math.floor((item.saved / item.target) * 100));
+        const card = document.createElement("div");
+        card.className = "item-card";
+        card.style.animationDelay = (index * 0.1) + "s";
+        
+        let imageTag = "";
+        if (item.image) {
+          imageTag = `<img src="${item.image}" alt="Изображение товара" class="product-image">`;
+        }
+        card.innerHTML = `
+          ${imageTag}
+          <div class="item-header">
+            <h3>${item.name}</h3>
+            <button class="delete-btn" data-index="${index}">Удалить</button>
+          </div>
+          <div class="item-info">
+            <p>Целевая сумма: ${item.target}</p>
+            <p>Накоплено: ${item.saved}</p>
+          </div>
+          <div class="progress-bar">
+            <div class="progress" style="width: ${progressPercent}%"></div>
+          </div>
+          <div class="item-actions">
+            <button class="deposit-btn" data-index="${index}">Внести</button>
+            <button class="withdraw-btn" data-index="${index}">Вывести</button>
+          </div>
+        `;
+        container.appendChild(card);
+        
+        // Если у товара есть изображение – открытие Lightbox по клику
+        if (item.image) {
+          const img = card.querySelector(".product-image");
+          img.addEventListener("click", () => {
+            showLightbox(item.image);
+          });
+        }
+      });
+      
+      updateAnalytics();
+      
+      // Привязываем обработчики для операций
+      document.querySelectorAll(".deposit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          activeItemIndex = e.target.getAttribute("data-index");
+          activeOperation = "deposit";
+          activeButton = e.target;
+          showKeypad();
+        });
+      });
+      
+      document.querySelectorAll(".withdraw-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          activeItemIndex = e.target.getAttribute("data-index");
+          activeOperation = "withdraw";
+          activeButton = e.target;
+          showKeypad();
+        });
+      });
+      
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const idx = e.target.getAttribute("data-index");
+          if (confirm("Удалить товар?")) {
+            items.splice(idx, 1);
+            saveItems();
+            renderItems();
+          }
+        });
+      });
+    }
+    
+    /* Работа с модальным окном клавиатуры */
+    function showKeypad() {
+      keypadValue = "0";
+      updateKeypadDisplay();
+      document.getElementById("keypadModal").classList.remove("hidden");
+    }
+    function hideKeypad() {
+      document.getElementById("keypadModal").classList.add("hidden");
+    }
+    function updateKeypadDisplay() {
+      document.getElementById("keypadDisplay").innerText = keypadValue;
+    }
+    function initKeypad() {
+      document.querySelectorAll(".keys .key").forEach(key => {
+        key.addEventListener("click", () => {
+          const keyVal = key.innerText;
+          if (keyVal === "C") {
+            keypadValue = "0";
+          } else if (keyVal === "⌫") {
+            keypadValue = keypadValue.length > 1 ? keypadValue.slice(0, -1) : "0";
+          } else {
+            keypadValue = (keypadValue === "0") ? keyVal : keypadValue + keyVal;
+          }
+          updateKeypadDisplay();
+        });
+      });
+      document.getElementById("cancelKeypad").addEventListener("click", hideKeypad);
+      document.getElementById("confirmKeypad").addEventListener("click", () => {
+        const amount = parseFloat(keypadValue);
+        if (isNaN(amount) || amount <= 0) {
+          alert("Введите корректную сумму");
+          return;
+        }
+        const item = items[activeItemIndex];
+        if (activeOperation === "deposit") {
+          item.saved = (item.saved || 0) + amount;
+          // Если достигнута цель и ранее не поздравляли – запускаем поздравление
+          if (item.saved >= item.target && !item.goalReached) {
+            item.goalReached = true;
+            saveItems();
+            renderItems();
+            showGoalModal(item);
+            hideKeypad();
+            return;
+          }
+        } else if (activeOperation === "withdraw") {
+          if (amount > item.saved) {
+            alert("Недостаточно средств для вывода");
+            return;
+          }
+          item.saved -= amount;
+        }
+        saveItems();
+        renderItems();
+        hideKeypad();
+      });
+    }
+    
+    /* Модальное окно: Добавление нового товара */
+    function showAddProductModal() {
+      document.getElementById("addProductModal").classList.remove("hidden");
+    }
+    function hideAddProductModal() {
+      document.getElementById("addProductModal").classList.add("hidden");
+      document.getElementById("addProductForm").reset();
+    }
+    
+    /* Модальное окно: Поздравление с достижением цели */
+    function showGoalModal(product) {
+      document.getElementById("goalProductName").innerText = product.name;
+      if (product.image) {
+        document.getElementById("goalProductImage").src = product.image;
+      } else {
+        document.getElementById("goalProductImage").src = "https://via.placeholder.com/200x150?text=No+Image";
+      }
+      document.getElementById("goalModal").classList.remove("hidden");
+      // Эффект конфетти
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+    function hideGoalModal() {
+      document.getElementById("goalModal").classList.add("hidden");
+    }
+    
+    /* Модальное окно: Lightbox для просмотра изображения товара */
+    function showLightbox(imageSrc) {
+      document.getElementById("lightboxImage").src = imageSrc;
+      document.getElementById("lightboxModal").classList.remove("hidden");
+    }
+    function hideLightbox() {
+      document.getElementById("lightboxModal").classList.add("hidden");
+    }
+    
+    /* Обработка формы добавления нового товара */
+    document.getElementById("addProductForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("newProductName").value.trim();
+      const target = parseFloat(document.getElementById("newProductTarget").value);
+      if (!name || isNaN(target) || target <= 0) {
+        alert("Введите корректные данные");
+        return;
+      }
+      const newProduct = {
+        name: name,
+        target: target,
+        saved: 0,
+        goalReached: false,
+        timestamp: Date.now(),
+        image: ""
+      };
+      const imageInput = document.getElementById("newProductImage");
+      if (imageInput.files && imageInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          newProduct.image = event.target.result;
+          items.push(newProduct);
+          saveItems();
+          renderItems();
+          hideAddProductModal();
+        };
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        items.push(newProduct);
+        saveItems();
+        renderItems();
+        hideAddProductModal();
+      }
+    });
+    
+    /* Обработчики для фильтров и сортировки */
+    document.getElementById("filterSelect").addEventListener("change", renderItems);
+    document.getElementById("sortSelect").addEventListener("change", renderItems);
+    
+    /* Кнопки открытия/закрытия модальных окон */
+    document.getElementById("openAddProductBtn").addEventListener("click", showAddProductModal);
+    document.getElementById("closeAddProduct").addEventListener("click", hideAddProductModal);
+    document.getElementById("closeGoalModal").addEventListener("click", hideGoalModal);
+    document.getElementById("closeLightbox").addEventListener("click", hideLightbox);
+    
+    /* Кнопка "Поделиться" в поздравительном окне */
+    document.getElementById("shareGoal").addEventListener("click", () => {
+      const productName = document.getElementById("goalProductName").innerText;
+      const shareText = `Я только что достиг цели накоплений для товара "${productName}" в сервисе Копилка на Вещи!`;
+      if (navigator.share) {
+        navigator.share({
+          title: 'Копилка на Вещи',
+          text: shareText,
+          url: window.location.href
+        }).catch((error) => console.error('Error sharing', error));
+      } else {
+        prompt("Скопируйте эту ссылку для поделиться:", window.location.href);
+      }
+    });
+    
+    // Инициализация при загрузке страницы
+    window.addEventListener("load", () => {
+      loadItems();
+      initKeypad();
+    });
+  </script>
+</body>
+</html>
